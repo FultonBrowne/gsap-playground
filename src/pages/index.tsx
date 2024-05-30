@@ -15,6 +15,7 @@ export default function Home() {
   const textRef = useRef(null);
   const pageRef = useRef(null);
   const blocksRef = useRef([]);
+  const mouseRef = useRef(null);
 
   useEffect(() => {
     if (!textRef.current || !pageRef.current) return;
@@ -27,36 +28,25 @@ export default function Home() {
       start: "bottom center",
       end: "bottom top",
       onEnter: () => {
-        // Snap to the next page
         gsap.to(pageRef.current, { opacity: 1, xPercent: 0, duration: 1 });
         gsap.to(textRef.current, { opacity: 0, duration: 1 });
-        // show the blocks
         gsap.to(blocksRef.current, { opacity: 1, duration: 2 });
-        // Animate the blocks
-        const tl = gsap.timeline({ repeat: -1 });
 
-        blocksRef.current.forEach((block, index) => {
-          tl.to(block, {
-            rotation: 720,
-            duration: 1,
-            ease: "linear",
-            onComplete: () => {
-              gsap.set(block, { rotation: 0 }); // Reset rotation after each spin
-            },
-          });
-          tl.to(block, { rotation: 0, duration: 0.5 }); // Pause between spins
-        });
-
-        // Subtle movement and grow effect
         blocksRef.current.forEach((block) => {
           gsap.to(block, {
-            x: () => `${Math.random() * 10 - 5}px`,
-            y: () => `${Math.random() * 10 - 5}px`,
-            scale: () => 1 + Math.random() * 0.2,
-            duration: 1.5,
+            rotation: 360,
+            duration: 20, // Longer duration for smoother rotation
+            ease: "linear",
+            repeat: -1,
+          });
+
+          gsap.to(block, {
+            x: () => `${Math.random() * 100 - 50}vw`,
+            y: () => `${Math.random() * 100 - 50}vh`,
+            duration: () => Math.random() * 15 + 10, // Longer duration for smoother movement
             repeat: -1,
             yoyo: true,
-            ease: "sine.inOut",
+            ease: "sine.inOut", // Smoother easing function
           });
         });
       },
@@ -65,17 +55,51 @@ export default function Home() {
         gsap.to(textRef.current, { opacity: 1, duration: 1 });
         gsap.set(blocksRef.current, { opacity: 0, duration: 2 });
 
-        // Reset blocks animation
         blocksRef.current.forEach((block) => {
           gsap.to(block, { rotation: 0, duration: 1 });
         });
       },
       markers: true,
     });
+
+    // Mouse follow
+    window.addEventListener("mousemove", (event) => {
+      gsap.to(mouseRef.current, {
+        x: event.clientX,
+        y: event.clientY,
+        duration: 0.1,
+      });
+    });
+
+    return () => {
+      window.removeEventListener("mousemove", () => {});
+    };
   }, []);
 
   return (
     <main className={lora.className}>
+      <div className="fixed blur-xl top-0 left-0 w-full h-full z-[-1] ">
+        {/* one cube the follows the mouse */}
+        <div
+          className="fixed w-[80px] h-[80px] bg-red-200 rounded-full"
+          style={{
+            top: `-40px`,
+            left: `-40px`,
+          }}
+          ref={mouseRef}
+        />
+        {Array.from({ length: 35 }).map((_, index) => (
+          <div
+            key={index}
+            ref={(el) => (blocksRef.current[index] = el)}
+            className="fixed w-20 h-20 bg-red-200 rounded-xl"
+            style={{
+              top: `80%`,
+              left: `20%`,
+            }}
+          />
+        ))}
+      </div>
       <div className="flex min-h-screen items-center justify-center">
         <div ref={textRef} className="italic fixed">
           {"Hello There".split("").map((char, index) => (
@@ -85,19 +109,7 @@ export default function Home() {
           ))}
         </div>
       </div>
-      <div className="fixed top-0 left-0 w-[1/2] h-1/2 z-[-1] ">
-        {Array.from({ length: 7 }).map((_, index) => (
-          <div
-            key={index}
-            ref={(el) => (blocksRef.current[index] = el)}
-            className="fixed w-10 h-10 bg-zinc-200 rounded-xl"
-            style={{
-              top: `${Math.random() * 70}%`,
-              left: `${Math.random() * 100}%`,
-            }}
-          />
-        ))}
-      </div>
+
       <div
         ref={pageRef}
         className="flex flex-col justify-end p-24 pt-0 relative snap-start"
